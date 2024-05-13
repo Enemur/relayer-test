@@ -274,14 +274,14 @@ impl BlockEngineRelayerHandler {
         is_connected_to_block_engine: &Arc<AtomicBool>,
         ofac_addresses: &HashSet<Pubkey>,
     ) -> BlockEngineResult<()> {
-        let subscribe_aoi_stream = client
-            .subscribe_accounts_of_interest(AccountsOfInterestRequest {})
-            .await
-            .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
-        let subscribe_poi_stream = client
-            .subscribe_programs_of_interest(ProgramsOfInterestRequest {})
-            .await
-            .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
+        // let subscribe_aoi_stream = client
+        //     .subscribe_accounts_of_interest(AccountsOfInterestRequest {})
+        //     .await
+        //     .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
+        // let subscribe_poi_stream = client
+        //     .subscribe_programs_of_interest(ProgramsOfInterestRequest {})
+        //     .await
+        //     .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
 
         // sender tracked as block_engine_relayer-loop_stats.block_engine_packet_sender_len
         let (block_engine_packet_sender, block_engine_packet_receiver) =
@@ -294,8 +294,8 @@ impl BlockEngineRelayerHandler {
         Self::handle_packet_stream(
             block_engine_packet_sender,
             block_engine_receiver,
-            subscribe_aoi_stream,
-            subscribe_poi_stream,
+            // subscribe_aoi_stream,
+            // subscribe_poi_stream,
             keypair,
             exit,
             aoi_cache_ttl_s,
@@ -310,8 +310,8 @@ impl BlockEngineRelayerHandler {
     async fn handle_packet_stream(
         block_engine_packet_sender: Sender<PacketBatchUpdate>,
         block_engine_receiver: &mut Receiver<BlockEnginePackets>,
-        subscribe_aoi_stream: Response<Streaming<AccountsOfInterestUpdate>>,
-        subscribe_poi_stream: Response<Streaming<ProgramsOfInterestUpdate>>,
+        // subscribe_aoi_stream: Response<Streaming<AccountsOfInterestUpdate>>,
+        // subscribe_poi_stream: Response<Streaming<ProgramsOfInterestUpdate>>,
         keypair: &Arc<Keypair>,
         exit: &Arc<AtomicBool>,
         aoi_cache_ttl_s: u64,
@@ -319,8 +319,8 @@ impl BlockEngineRelayerHandler {
         is_connected_to_block_engine: &Arc<AtomicBool>,
         ofac_addresses: &HashSet<Pubkey>,
     ) -> BlockEngineResult<()> {
-        let mut aoi_stream = subscribe_aoi_stream.into_inner();
-        let mut poi_stream = subscribe_poi_stream.into_inner();
+        // let mut aoi_stream = subscribe_aoi_stream.into_inner();
+        // let mut poi_stream = subscribe_poi_stream.into_inner();
 
         // drain old buffered packets before streaming packets to the block engine
         while block_engine_receiver.try_recv().is_ok() {}
@@ -354,28 +354,28 @@ impl BlockEngineRelayerHandler {
 
                     heartbeat_count += 1;
                 }
-                maybe_aoi = aoi_stream.message() => {
-                    trace!("received aoi message");
-
-                    let now = Instant::now();
-
-                    let num_pubkeys = Self::handle_aoi(maybe_aoi, &mut accounts_of_interest)?;
-
-                    block_engine_stats.increment_aoi_update_elapsed_us(now.elapsed().as_micros() as u64);
-                    block_engine_stats.increment_aoi_update_count(1);
-                    block_engine_stats.increment_aoi_accounts_received(num_pubkeys as u64);
-                }
-                maybe_poi = poi_stream.message() => {
-                    trace!("received poi message");
-
-                    let now = Instant::now();
-
-                    let num_pubkeys = Self::handle_poi(maybe_poi, &mut programs_of_interest)?;
-
-                    block_engine_stats.increment_poi_update_elapsed_us(now.elapsed().as_micros() as u64);
-                    block_engine_stats.increment_poi_update_count(1);
-                    block_engine_stats.increment_poi_accounts_received(num_pubkeys as u64);
-                }
+                // maybe_aoi = aoi_stream.message() => {
+                //     trace!("received aoi message");
+                //
+                //     let now = Instant::now();
+                //
+                //     let num_pubkeys = Self::handle_aoi(maybe_aoi, &mut accounts_of_interest)?;
+                //
+                //     block_engine_stats.increment_aoi_update_elapsed_us(now.elapsed().as_micros() as u64);
+                //     block_engine_stats.increment_aoi_update_count(1);
+                //     block_engine_stats.increment_aoi_accounts_received(num_pubkeys as u64);
+                // }
+                // maybe_poi = poi_stream.message() => {
+                //     trace!("received poi message");
+                //
+                //     let now = Instant::now();
+                //
+                //     let num_pubkeys = Self::handle_poi(maybe_poi, &mut programs_of_interest)?;
+                //
+                //     block_engine_stats.increment_poi_update_elapsed_us(now.elapsed().as_micros() as u64);
+                //     block_engine_stats.increment_poi_update_count(1);
+                //     block_engine_stats.increment_poi_accounts_received(num_pubkeys as u64);
+                // }
                 block_engine_batches = block_engine_receiver.recv() => {
                     trace!("received block engine batches");
                     let block_engine_batches = block_engine_batches
