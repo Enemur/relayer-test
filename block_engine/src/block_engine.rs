@@ -265,7 +265,7 @@ impl BlockEngineRelayerHandler {
     /// try to re-establish connection
     #[allow(clippy::too_many_arguments)]
     async fn start_event_loop(
-        mut client: BlockEngineRelayerClient<InterceptedService<Channel, AuthInterceptor>>,
+        mut client: BlockEngineRelayerClient<Channel>,
         block_engine_receiver: &mut Receiver<BlockEnginePackets>,
         keypair: &Arc<Keypair>,
         exit: &Arc<AtomicBool>,
