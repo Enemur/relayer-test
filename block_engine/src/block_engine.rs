@@ -243,7 +243,7 @@ impl BlockEngineRelayerHandler {
         );
 
         let block_engine_client =
-            BlockEngineRelayerClient::connect(block_engine_channel);
+            BlockEngineRelayerClient::new(block_engine_channel);
 
         Self::start_event_loop(
             block_engine_client,
