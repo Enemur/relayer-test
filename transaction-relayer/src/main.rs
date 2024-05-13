@@ -138,6 +138,7 @@ struct Args {
     #[arg(long, env)]
     block_engine_url: Option<String>,
 
+    #[arg(long, env)]
     api_url: Option<String>,
 
     /// Manual override for authentication service address of the block-engine.
