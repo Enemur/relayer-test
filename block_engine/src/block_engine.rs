@@ -343,6 +343,7 @@ impl BlockEngineRelayerHandler {
         while !exit.load(Ordering::Relaxed) {
             select! {
                 _ = heartbeat_interval.tick() => {
+                    datapoint_info!("sending heartbeat");
                     trace!("sending heartbeat");
 
                     let now = Instant::now();
