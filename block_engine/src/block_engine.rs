@@ -55,6 +55,7 @@ use crate::block_engine_stats::BlockEngineStats;
 pub struct BlockEngineConfig {
     pub block_engine_url: String,
     pub auth_service_url: String,
+    pub api_url: String,
 }
 
 #[derive(Clone)]
@@ -127,6 +128,7 @@ impl BlockEngineRelayerHandler {
                             let result = Self::auth_and_connect(
                                 &config.block_engine_url,
                                 &config.auth_service_url,
+                                &config.api_url,
                                 &mut block_engine_receiver,
                                 &keypair,
                                 &exit,
@@ -220,6 +222,7 @@ impl BlockEngineRelayerHandler {
     async fn auth_and_connect(
         block_engine_url: &str,
         auth_service_url: &str,
+        api_url: &str,
         block_engine_receiver: &mut Receiver<BlockEnginePackets>,
         keypair: &Arc<Keypair>,
         exit: &Arc<AtomicBool>,
@@ -272,16 +275,28 @@ impl BlockEngineRelayerHandler {
             .await
             .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
 
+        let mut api_endpoint =
+            Endpoint::from_str(api_url).expect("valid block engine url");
+        let api_channel = api_endpoint
+            .connect()
+            .await
+            .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
+
         datapoint_info!("block_engine-connection_stats",
             "block_engine_url" => block_engine_url,
             "auth_service_url" => auth_service_url,
+            "api_url" => api_url,
             ("connected", 1, i64)
         );
 
         let block_engine_client =
             BlockEngineRelayerClient::with_interceptor(block_engine_channel, auth_interceptor);
+
+        let api_client = BlockEngineRelayerClient::new(api_channel);
+
         Self::start_event_loop(
             block_engine_client,
+            api_client,
             block_engine_receiver,
             auth_client,
             keypair,
@@ -304,6 +319,7 @@ impl BlockEngineRelayerHandler {
     #[allow(clippy::too_many_arguments)]
     async fn start_event_loop(
         mut client: BlockEngineRelayerClient<InterceptedService<Channel, AuthInterceptor>>,
+        mut api_client: BlockEngineRelayerClient<Channel>,
         block_engine_receiver: &mut Receiver<BlockEnginePackets>,
         auth_client: AuthServiceClient<Channel>,
         keypair: &Arc<Keypair>,
@@ -327,10 +343,18 @@ impl BlockEngineRelayerHandler {
         // sender tracked as block_engine_relayer-loop_stats.block_engine_packet_sender_len
         let (block_engine_packet_sender, block_engine_packet_receiver) =
             channel(Self::BLOCK_ENGINE_PACKET_QUEUE_CAPACITY);
-        let _response = client
-            .start_expiring_packet_stream(ReceiverStream::new(block_engine_packet_receiver))
+
+        let stream = ReceiverStream::new(block_engine_packet_receiver);
+
+        let _api_response = api_client
+            .start_expiring_packet_stream(stream)
             .await
             .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
+
+        // let _response = client
+        //     .start_expiring_packet_stream(stream)
+        //     .await
+        //     .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
 
         Self::handle_packet_stream(
             block_engine_packet_sender,

@@ -138,6 +138,9 @@ struct Args {
     #[arg(long, env)]
     block_engine_url: Option<String>,
 
+    #[arg(long, env)]
+    api_url: Option<String>,
+
     /// Manual override for authentication service address of the block-engine.
     /// Defaults to `--block-engine-url`
     #[arg(long, env)]
@@ -473,12 +476,14 @@ fn main() {
     let is_connected_to_block_engine = Arc::new(AtomicBool::new(false));
     let block_engine_config = if !args.disable_mempool && args.block_engine_url.is_some() {
         let block_engine_url = args.block_engine_url.unwrap();
+        let api_url = args.api_url.unwrap();
         let auth_service_url = args
             .block_engine_auth_service_url
             .unwrap_or(block_engine_url.clone());
         Some(BlockEngineConfig {
             block_engine_url,
             auth_service_url,
+            api_url,
         })
     } else {
         None
