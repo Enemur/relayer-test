@@ -323,7 +323,7 @@ impl BlockEngineRelayerHandler {
         // let mut poi_stream = subscribe_poi_stream.into_inner();
 
         // drain old buffered packets before streaming packets to the block engine
-        while block_engine_receiver.try_recv().is_ok() {}
+        // while block_engine_receiver.try_recv().is_ok() {}
 
         is_connected_to_block_engine.store(true, Ordering::Relaxed);
 
