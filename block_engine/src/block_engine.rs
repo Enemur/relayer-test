@@ -284,12 +284,16 @@ impl BlockEngineRelayerHandler {
         //     .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
 
         // sender tracked as block_engine_relayer-loop_stats.block_engine_packet_sender_len
+        datapoint_info!("start stream");
+
         let (block_engine_packet_sender, block_engine_packet_receiver) =
             channel(Self::BLOCK_ENGINE_PACKET_QUEUE_CAPACITY);
         let _response = client
             .start_expiring_packet_stream(ReceiverStream::new(block_engine_packet_receiver))
             .await
             .map_err(|e| BlockEngineError::BlockEngineFailure(e.to_string()))?;
+
+        datapoint_info!("stream_started");
 
         Self::handle_packet_stream(
             block_engine_packet_sender,
@@ -319,6 +323,7 @@ impl BlockEngineRelayerHandler {
         is_connected_to_block_engine: &Arc<AtomicBool>,
         ofac_addresses: &HashSet<Pubkey>,
     ) -> BlockEngineResult<()> {
+        datapoint_info!("handle_packet_stream");
         // let mut aoi_stream = subscribe_aoi_stream.into_inner();
         // let mut poi_stream = subscribe_poi_stream.into_inner();
 
